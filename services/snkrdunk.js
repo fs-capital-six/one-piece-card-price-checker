@@ -1,6 +1,7 @@
 const { toIdr } = require('./currency');
 const { classifyCardVariant, attachVariantFlags } = require('./variantFilter');
 const { parsePrintingFromVariantName, scorePrinting, normalizePrintingKey } = require('./printingParser');
+const { filterJapaneseApparels } = require('./regionFilter');
 
 const API = 'https://snkrdunk.com/v1/apparels';
 const HEADERS = {
@@ -69,7 +70,9 @@ function scoreApparel(apparel) {
 
 async function findApparels(cardSetId) {
   const data = await apiGet('', { productNumber: cardSetId.toUpperCase() });
-  const fromProduct = (data.apparels || []).filter((item) => matchesCard(item, cardSetId));
+  const fromProduct = filterJapaneseApparels(
+    (data.apparels || []).filter((item) => matchesCard(item, cardSetId))
+  );
 
   if (fromProduct.length > 0) return fromProduct;
 
@@ -78,7 +81,7 @@ async function findApparels(cardSetId) {
     page: 1,
     perPage: 20,
   });
-  return (search.apparels || []).filter((item) => matchesCard(item, cardSetId));
+  return filterJapaneseApparels((search.apparels || []).filter((item) => matchesCard(item, cardSetId)));
 }
 
 function pickBestApparel(apparels, { cardVariant = 'normal', isParallel = false, isSp = false } = {}) {

@@ -73,8 +73,12 @@ function buildCardImageQuery({ cardVariant, isParallel, isSp, imageUrl, apparelI
 app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
-    version: '1.6.0',
-    features: { cardVariants: ['normal', 'parallel', 'sp', 'manga', 'sec', 'promo'], gradeFilters: true },
+    version: '1.7.0',
+    features: {
+      cardVariants: ['normal', 'parallel', 'sp', 'manga', 'sec', 'promo'],
+      gradeFilters: true,
+      japaneseOnly: true,
+    },
     grades: GRADE_OPTIONS.map((g) => ({ key: g.key, label: g.label })),
   });
 });

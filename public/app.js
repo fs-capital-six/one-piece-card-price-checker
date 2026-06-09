@@ -474,8 +474,8 @@ function renderResults(data) {
   });
 
   const intlNote = isGraded
-    ? `${gradeLabel} SNKRDUNK (sold)`
-    : 'Yuyu-Tei + SNKRDUNK sold';
+    ? `${gradeLabel} SNKRDUNK JP (sold)`
+    : 'Yuyu-Tei + SNKRDUNK JP (sold)';
   renderRegionSummary({
     summary: internationalSummary,
     priceEl: internationalAvgEl,

@@ -13,6 +13,7 @@ const {
 } = require('./variantFilter');
 const { attachPrinting } = require('./printingParser');
 const { summarize, buildPrintings, selectPrinting } = require('./printingGroups');
+const { filterJapanesePriceEntries } = require('./regionFilter');
 
 function savePrices(cardSetId, entries) {
   const insert = db.prepare(`
@@ -78,7 +79,7 @@ async function lookupPrices(cardSetId, options = {}) {
   const yuyuTei = isGradedLookup
     ? []
     : tagEntries(applyFilters(yuyuTeiRaw, { cardVariant, gradeKey: 'raw' }), normalized);
-  const snkrdunk = applyFilters(snkrdunkRaw, { cardVariant, gradeKey });
+  const snkrdunk = applyFilters(filterJapanesePriceEntries(snkrdunkRaw), { cardVariant, gradeKey });
   const facebook = tagEntries(applyFilters(facebookRaw, { cardVariant, gradeKey }), normalized);
   const allEntries = [...yuyuTei, ...snkrdunk, ...facebook];
 
@@ -125,9 +126,14 @@ async function lookupPrices(cardSetId, options = {}) {
     selectedPrintingKey: selected.selectedPrintingKey,
     selectedPrinting: selected.selectedPrinting,
     sourceMeta: {
-      'yuyu-tei': { supportsGraded: false },
-      snkrdunk: { supportsGraded: true },
-      facebook: { supportsGraded: true },
+      'yuyu-tei': { supportsGraded: false, market: 'JP' },
+      snkrdunk: { supportsGraded: true, market: 'JP' },
+      facebook: { supportsGraded: true, market: 'ID', note: 'Harga komunitas — bisa JP atau EN' },
+    },
+    marketScope: {
+      international: 'JP',
+      description:
+        'Referensi internasional hanya dari kartu versi Jepang. Listing SNKRDUNK bertag [EN] diabaikan.',
     },
     errors,
     message,
