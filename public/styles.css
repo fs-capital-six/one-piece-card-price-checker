@@ -85,14 +85,34 @@
 
 @media (min-width: 640px) {
   .language-inline {
-    width: 8.5rem;
+    width: 9.5rem;
     flex-shrink: 0;
   }
 }
 
-.filter-select-compact {
-  padding: 0.625rem 0.75rem;
-  font-size: 0.875rem;
+.card-code-input,
+.card-code-row .filter-select-compact {
+  width: 100%;
+  min-height: 2.875rem;
+  box-sizing: border-box;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 0.5rem;
+  padding: 0.625rem 1rem;
+  color: #f1f5f9;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.card-code-input:focus,
+.card-code-row .filter-select-compact:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #f59e0b;
+}
+
+.card-code-row .filter-select-compact {
+  padding-right: 0.75rem;
+  font-size: 0.9375rem;
 }
 
 .variant-badge-normal {
