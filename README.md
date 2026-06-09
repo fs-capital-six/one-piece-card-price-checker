@@ -22,6 +22,23 @@ npm start
 
 Buka [http://localhost:3000](http://localhost:3000)
 
+## Deploy gratis (publik)
+
+Cara termudah: **[Render](https://render.com)** (free tier).
+
+1. Fork atau gunakan repo: `https://github.com/fs-capital-six/one-piece-card-price-checker`
+2. Daftar/login di [render.com](https://render.com)
+3. **New → Blueprint** → connect GitHub → pilih repo ini
+4. Render membaca `render.yaml` otomatis → **Apply**
+5. Tunggu build selesai (~3–5 menit) → dapat URL publik `https://one-piece-card-price-checker.onrender.com`
+
+Atau manual: **New → Web Service** → connect repo → Runtime: Node → Build: `npm install` → Start: `npm start` → Plan: **Free**.
+
+Catatan hosting gratis:
+- Server tidur setelah ~15 menit tidak dipakai (cold start ~30 detik saat pertama dibuka)
+- Database SQLite & upload bersifat sementara (reset saat redeploy)
+- OCR foto butuh memori lebih besar; jika gagal, ketik kode kartu manual
+
 ## Stack
 
 - **Backend:** Express.js

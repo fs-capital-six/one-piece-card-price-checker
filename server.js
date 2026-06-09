@@ -278,6 +278,6 @@ app.post('/api/admin/facebook-price', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`One Piece Price Checker running at http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`One Piece Price Checker running on port ${PORT}`);
 });
