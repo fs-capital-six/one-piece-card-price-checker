@@ -1,3 +1,31 @@
+.distribution-card {
+  border-color: rgba(100, 116, 139, 0.45);
+}
+
+.distribution-card[data-category='booster_pack'],
+.distribution-card[data-category='extra_booster'],
+.distribution-card[data-category='premium_booster'] {
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.distribution-card[data-category='competition'] {
+  border-color: rgba(96, 165, 250, 0.3);
+}
+
+.distribution-card[data-category='magazine'] {
+  border-color: rgba(192, 132, 252, 0.3);
+}
+
+.distribution-card[data-category='promo'],
+.distribution-card[data-category='promo_product'] {
+  border-color: rgba(52, 211, 153, 0.25);
+}
+
+.auto-filled-field {
+  box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.45);
+  transition: box-shadow 0.3s ease;
+}
+
 .parallel-option,
 .filter-field {
   padding: 0.875rem 1rem;

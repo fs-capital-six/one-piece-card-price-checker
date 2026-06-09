@@ -12,6 +12,9 @@ const adminMsg = document.getElementById('adminMsg');
 const cardVariantSelect = document.getElementById('cardVariant');
 const gradeKeySelect = document.getElementById('gradeKey');
 const parallelDetectHint = document.getElementById('parallelDetectHint');
+const cardSetIdInput = document.getElementById('cardSetId');
+const cardIdDetectHint = document.getElementById('cardIdDetectHint');
+const uploadAutoFillHint = document.getElementById('uploadAutoFillHint');
 const printingSection = document.getElementById('printingSection');
 const printingPicker = document.getElementById('printingPicker');
 const printingHint = document.getElementById('printingHint');
@@ -131,90 +134,120 @@ imageInput.addEventListener('change', () => {
   if (imageInput.files[0]) setPreview(imageInput.files[0]);
 });
 
-function loadImageElement(file) {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve(img);
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error('Failed to load image'));
-    };
-    img.src = url;
-  });
+function setSelectValue(select, value) {
+  if (!select || !value) return false;
+  const option = select.querySelector(`option[value="${CSS.escape(value)}"]`);
+  if (!option) return false;
+  select.value = value;
+  return true;
 }
 
-function isGoldStarPixel(r, g, b) {
-  return r > 170 && g > 120 && b < 140 && r > b + 35 && g > b + 10;
-}
-
-function isBrightAccentPixel(r, g, b) {
-  return r + g + b > 600 && Math.max(r, g, b) - Math.min(r, g, b) > 35;
-}
-
-async function detectParallelFromImage(file) {
-  const img = await loadImageElement(file);
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  canvas.width = img.naturalWidth;
-  canvas.height = img.naturalHeight;
-  ctx.drawImage(img, 0, 0);
-
-  const w = canvas.width;
-  const h = canvas.height;
-  const starRegion = {
-    x: Math.floor(w * 0.74),
-    y: Math.floor(h * 0.84),
-    width: Math.max(1, Math.floor(w * 0.18)),
-    height: Math.max(1, Math.floor(h * 0.08)),
-  };
-
-  const { data } = ctx.getImageData(starRegion.x, starRegion.y, starRegion.width, starRegion.height);
-  let goldCount = 0;
-  let brightCount = 0;
-  const total = data.length / 4;
-
-  for (let i = 0; i < data.length; i += 4) {
-    const r = data[i];
-    const g = data[i + 1];
-    const b = data[i + 2];
-    if (isGoldStarPixel(r, g, b)) goldCount += 1;
-    if (isBrightAccentPixel(r, g, b)) brightCount += 1;
-  }
-
-  const goldRatio = goldCount / total;
-  const brightRatio = brightCount / total;
-  return goldRatio > 0.007 || (goldRatio > 0.0035 && brightRatio > 0.018);
+function flashAutoFilledField(el) {
+  if (!el) return;
+  el.classList.add('auto-filled-field');
+  window.setTimeout(() => el.classList.remove('auto-filled-field'), 1600);
 }
 
 function showParallelDetectHint(message, detected) {
+  if (!parallelDetectHint) return;
   parallelDetectHint.textContent = message;
   parallelDetectHint.className = detected
     ? 'text-xs text-amber-400/90 mt-3'
     : 'text-xs text-slate-500 mt-3';
-  parallelDetectHint.classList.remove('hidden');
+  parallelDetectHint.classList.toggle('hidden', !message);
 }
 
-async function analyzeParallelFromUpload(file) {
-  try {
-    const detected = await detectParallelFromImage(file);
-    if (detected) {
-      cardVariantSelect.value = 'parallel';
-      showParallelDetectHint(
-        'Bintang ★ di atas SR terdeteksi di foto — varian Parallel dipilih otomatis.',
-        true
-      );
-    } else {
-      showParallelDetectHint(
-        'Tidak ada bintang ★ terdeteksi di atas rarity. Pilih Parallel manual jika kartu Anda memiliki ikon bintang di pojok kanan bawah.',
-        false
-      );
+function showUploadAutoFillHint(message) {
+  if (!uploadAutoFillHint) return;
+  uploadAutoFillHint.textContent = message;
+  uploadAutoFillHint.classList.toggle('hidden', !message);
+}
+
+function applyUploadAnalysis(data) {
+  const filled = [];
+
+  if (data.cardId) {
+    cardSetIdInput.value = data.cardId;
+    flashAutoFilledField(cardSetIdInput);
+    filled.push(`kode ${data.cardId}`);
+  }
+
+  if (data.cardVariant && setSelectValue(cardVariantSelect, data.cardVariant)) {
+    flashAutoFilledField(cardVariantSelect);
+    if (data.cardVariant !== 'normal') {
+      filled.push(`varian ${VARIANT_LABELS[data.cardVariant] || data.cardVariant}`);
     }
+  }
+
+  if (data.gradeKey && setSelectValue(gradeKeySelect, data.gradeKey)) {
+    flashAutoFilledField(gradeKeySelect);
+    if (data.gradeKey !== 'raw') {
+      filled.push(`grade ${gradeKeySelect.selectedOptions[0]?.textContent || data.gradeKey}`);
+    }
+  }
+
+  if (data.cardId) {
+    showCardIdDetectHint(`Kode terdeteksi: ${data.cardId}`, true);
+  } else {
+    showCardIdDetectHint(
+      'Kode kartu tidak terbaca otomatis. Pastikan nomor di bagian bawah kartu terlihat jelas, atau ketik manual.',
+      false
+    );
+  }
+
+  if (data.hasParallelStar && data.cardVariant === 'parallel') {
+    showParallelDetectHint('Bintang ★ terdeteksi — varian Parallel dipilih otomatis.', true);
+  } else if (data.cardVariant === 'normal') {
+    showParallelDetectHint('', false);
+  } else if (data.cardVariant && data.cardVariant !== 'normal') {
+    showParallelDetectHint(
+      `Varian ${VARIANT_LABELS[data.cardVariant] || data.cardVariant} dipilih otomatis dari foto.`,
+      true
+    );
+  } else {
+    showParallelDetectHint('', false);
+  }
+
+  if (filled.length > 0) {
+    showUploadAutoFillHint(`Terisi otomatis: ${filled.join(', ')}. Periksa jika perlu diubah.`);
+  } else if (data.autoFillHints?.length) {
+    showUploadAutoFillHint(`Terisi otomatis: ${data.autoFillHints.join(' · ')}. Periksa jika perlu diubah.`);
+  } else {
+    showUploadAutoFillHint('');
+  }
+}
+
+function showCardIdDetectHint(message, detected = false) {
+  if (!cardIdDetectHint) return;
+  cardIdDetectHint.textContent = message;
+  cardIdDetectHint.className = detected
+    ? 'text-xs text-emerald-400/90 mb-2'
+    : 'text-xs text-amber-400/90 mb-2';
+  cardIdDetectHint.classList.toggle('hidden', !message);
+}
+
+async function analyzeUploadedImage(file) {
+  showCardIdDetectHint('Menganalisis foto…', false);
+  showUploadAutoFillHint('Membaca kode kartu, varian, dan grade dari foto…');
+  showParallelDetectHint('', false);
+
+  const formData = new FormData();
+  formData.append('image', file);
+
+  try {
+    const res = await fetch('/api/identify', { method: 'POST', body: formData });
+    const data = await res.json();
+
+    if (!res.ok) {
+      showCardIdDetectHint(data.error || 'Gagal membaca foto.', false);
+      showUploadAutoFillHint('');
+      return;
+    }
+
+    applyUploadAnalysis(data);
   } catch {
-    parallelDetectHint.classList.add('hidden');
+    showCardIdDetectHint('Gagal membaca foto. Anda masih bisa isi form manual.', false);
+    showUploadAutoFillHint('');
   }
 }
 
@@ -231,7 +264,7 @@ function setPreview(file) {
   dt.items.add(file);
   imageInput.files = dt.files;
 
-  analyzeParallelFromUpload(file);
+  analyzeUploadedImage(file);
 }
 
 function showError(message) {
@@ -345,6 +378,40 @@ function renderPrintingPicker(pricing, activeKey) {
   }
 }
 
+const DISTRIBUTION_CATEGORY_LABELS = {
+  booster_pack: 'Booster Pack / Box',
+  extra_booster: 'Extra Booster Pack / Box',
+  premium_booster: 'Premium Booster Pack / Box',
+  starter_deck: 'Starter Deck',
+  magazine: 'Majalah / Publikasi',
+  competition: 'Kompetisi / Turnamen',
+  promo_product: 'Produk Promo Khusus',
+  promo: 'Kartu Promo',
+  unknown: 'Sumber tidak diketahui',
+};
+
+function renderDistribution(distribution) {
+  const section = document.getElementById('resultDistribution');
+  const titleEl = document.getElementById('resultDistributionTitle');
+  const descEl = document.getElementById('resultDistributionDesc');
+
+  if (!section || !titleEl || !descEl) return;
+
+  if (!distribution?.description) {
+    section.classList.add('hidden');
+    titleEl.textContent = '';
+    descEl.textContent = '';
+    return;
+  }
+
+  const categoryLabel =
+    DISTRIBUTION_CATEGORY_LABELS[distribution.category] || distribution.title || 'Asal distribusi';
+  section.dataset.category = distribution.category || 'unknown';
+  titleEl.textContent = categoryLabel;
+  descEl.textContent = distribution.description;
+  section.classList.remove('hidden');
+}
+
 function renderResults(data) {
   lastResultData = data;
   const { cardSetId, cardInfo, pricing, identification } = data;
@@ -382,6 +449,8 @@ function renderResults(data) {
   gradedBadge.className = `text-xs font-semibold px-2 py-1 rounded ${
     isGraded ? 'variant-badge-graded' : 'variant-badge-ungraded'
   }`;
+
+  renderDistribution(activePrinting?.distribution || pricing.distribution || data.distribution);
 
   const gradeUnavailable = isGraded && internationalSummary?.count === 0;
   const indonesiaAvgEl = document.getElementById('indonesiaAvgPrice');
@@ -604,6 +673,14 @@ document.addEventListener('keydown', (event) => {
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   hideError();
+
+  const hasImage = Boolean(imageInput.files?.[0]);
+  const hasCode = cardSetIdInput.value.trim().length > 0;
+  if (!hasImage && !hasCode) {
+    showError('Unggah foto kartu atau masukkan kode kartu (contoh: OP01-001).');
+    return;
+  }
+
   loading.classList.remove('hidden');
   results.classList.add('hidden');
   selectedPrintingKey = null;
@@ -623,6 +700,10 @@ form.addEventListener('submit', async (e) => {
         showError(`${data.error}\n\nTeks terbaca OCR: ${data.identification.rawText.slice(0, 200)}`);
       }
       return;
+    }
+
+    if (data.identification) {
+      applyUploadAnalysis(data.identification);
     }
 
     renderResults(data);

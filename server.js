@@ -10,6 +10,30 @@ const { addFacebookPrice } = require('./services/facebook');
 const { formatIdr } = require('./services/currency');
 const { parseCardVariant, parseGradeKey } = require('./services/variantFilter');
 const { GRADE_OPTIONS } = require('./services/gradeFilter');
+const { buildDistributionDescription } = require('./services/cardDistribution');
+
+function attachDistributionToPricing(pricing, { cardSetId, cardVariant, cardInfo }) {
+  const printings = (pricing.printings || []).map((printing) => ({
+    ...printing,
+    distribution: buildDistributionDescription({ cardSetId, cardVariant, printing, cardInfo }),
+  }));
+
+  const selectedPrinting =
+    printings.find((printing) => printing.key === pricing.selectedPrintingKey) ||
+    pricing.selectedPrinting;
+
+  return {
+    ...pricing,
+    printings,
+    selectedPrinting,
+    distribution: buildDistributionDescription({
+      cardSetId,
+      cardVariant,
+      printing: selectedPrinting,
+      cardInfo,
+    }),
+  };
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -49,7 +73,7 @@ function buildCardImageQuery({ cardVariant, isParallel, isSp, imageUrl, apparelI
 app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
-    version: '1.3.0',
+    version: '1.6.0',
     features: { cardVariants: ['normal', 'parallel', 'sp', 'manga', 'sec', 'promo'], gradeFilters: true },
     grades: GRADE_OPTIONS.map((g) => ({ key: g.key, label: g.label })),
   });
@@ -96,8 +120,23 @@ app.get('/api/card-image/:cardSetId', async (req, res) => {
   res.status(404).json({ error: 'Card image not found' });
 });
 
+app.post('/api/identify', upload.single('image'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'Unggah foto kartu terlebih dahulu.' });
+  }
+
+  try {
+    const identification = await identifyFromImage(req.file.path);
+    res.json(identification);
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Gagal membaca foto kartu' });
+  } finally {
+    if (req.file) fs.unlink(req.file.path, () => {});
+  }
+});
+
 app.post('/api/check', upload.single('image'), async (req, res) => {
-  let cardSetId = (req.body.cardSetId || '').trim().toUpperCase();
+  let cardSetId = extractCardId(req.body.cardSetId || '') || (req.body.cardSetId || '').trim().toUpperCase();
   let identification = null;
   let uploadedImage = null;
 
@@ -113,8 +152,11 @@ app.post('/api/check', upload.single('image'), async (req, res) => {
     }
 
     if (!cardSetId) {
+      const hasImage = Boolean(req.file);
       return res.status(400).json({
-        error: 'Kartu tidak terdeteksi. Masukkan kode kartu (contoh: OP01-001) atau unggah foto yang lebih jelas.',
+        error: hasImage
+          ? 'Kode kartu tidak terbaca dari foto. Pastikan bagian bawah kartu (nomor OPxx-xxx) terlihat jelas, atau ketik kode kartu manual.'
+          : 'Unggah foto kartu atau masukkan kode kartu (contoh: OP01-001).',
         identification,
       });
     }
@@ -126,7 +168,10 @@ app.post('/api/check', upload.single('image'), async (req, res) => {
     const gradeKey = parseGradeKey(req.body.gradeKey, { isGraded: req.body.isGraded });
     const printingKey = (req.body.printingKey || '').trim() || null;
     const cardInfo = await fetchCardInfo(cardSetId, { cardVariant });
-    const pricing = await lookupPrices(cardSetId, { cardVariant, gradeKey, printingKey });
+    const pricing = attachDistributionToPricing(
+      await lookupPrices(cardSetId, { cardVariant, gradeKey, printingKey }),
+      { cardSetId, cardVariant, cardInfo }
+    );
     const selectedPrinting = pricing.selectedPrinting;
     const imageQuery = buildCardImageQuery({
       cardVariant,
@@ -148,6 +193,7 @@ app.post('/api/check', upload.single('image'), async (req, res) => {
       uploadedImage,
       identification,
       pricing,
+      distribution: pricing.distribution,
     });
   } catch (err) {
     res.status(500).json({ error: err.message || 'Terjadi kesalahan' });
@@ -168,7 +214,10 @@ app.get('/api/prices/:cardSetId', async (req, res) => {
     });
     const printingKey = (req.query.printing || '').trim() || null;
     const cardInfo = await fetchCardInfo(cardSetId, { cardVariant });
-    const pricing = await lookupPrices(cardSetId, { cardVariant, gradeKey, printingKey });
+    const pricing = attachDistributionToPricing(
+      await lookupPrices(cardSetId, { cardVariant, gradeKey, printingKey }),
+      { cardSetId, cardVariant, cardInfo }
+    );
     const selectedPrinting = pricing.selectedPrinting;
     const imageQuery = buildCardImageQuery({
       cardVariant,
@@ -187,6 +236,7 @@ app.get('/api/prices/:cardSetId', async (req, res) => {
       cardInfo,
       cardImageUrl: `/api/card-image/${cardSetId}${imageQuery}`,
       pricing,
+      distribution: pricing.distribution,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
