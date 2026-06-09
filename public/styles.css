@@ -53,6 +53,48 @@
   box-shadow: 0 0 0 2px #f59e0b;
 }
 
+.filter-select-locked {
+  opacity: 0.85;
+  cursor: not-allowed;
+  background: #172033;
+  color: #cbd5e1;
+}
+
+.card-code-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .card-code-row {
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 0.875rem;
+  }
+}
+
+.card-code-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.language-inline {
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .language-inline {
+    width: 8.5rem;
+    flex-shrink: 0;
+  }
+}
+
+.filter-select-compact {
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+}
+
 .variant-badge-normal {
   background: #334155;
   color: #e2e8f0;

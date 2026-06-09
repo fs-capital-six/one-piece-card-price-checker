@@ -10,6 +10,7 @@ const { addFacebookPrice } = require('./services/facebook');
 const { formatIdr } = require('./services/currency');
 const { parseCardVariant, parseGradeKey } = require('./services/variantFilter');
 const { GRADE_OPTIONS } = require('./services/gradeFilter');
+const { LANGUAGE_OPTIONS } = require('./services/languageFilter');
 const { buildDistributionDescription } = require('./services/cardDistribution');
 
 function attachDistributionToPricing(pricing, { cardSetId, cardVariant, cardInfo }) {
@@ -73,13 +74,14 @@ function buildCardImageQuery({ cardVariant, isParallel, isSp, imageUrl, apparelI
 app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
-    version: '1.7.0',
+    version: '1.8.0',
     features: {
       cardVariants: ['normal', 'parallel', 'sp', 'manga', 'sec', 'promo'],
       gradeFilters: true,
-      japaneseOnly: true,
+      languageFilter: true,
     },
     grades: GRADE_OPTIONS.map((g) => ({ key: g.key, label: g.label })),
+    languages: LANGUAGE_OPTIONS.map((l) => ({ key: l.key, label: l.label, enabled: l.enabled })),
   });
 });
 
@@ -170,10 +172,11 @@ app.post('/api/check', upload.single('image'), async (req, res) => {
       isSp: req.body.isSp,
     });
     const gradeKey = parseGradeKey(req.body.gradeKey, { isGraded: req.body.isGraded });
+    const languageKey = req.body.language || req.body.languageKey || 'ja';
     const printingKey = (req.body.printingKey || '').trim() || null;
     const cardInfo = await fetchCardInfo(cardSetId, { cardVariant });
     const pricing = attachDistributionToPricing(
-      await lookupPrices(cardSetId, { cardVariant, gradeKey, printingKey }),
+      await lookupPrices(cardSetId, { cardVariant, gradeKey, languageKey, printingKey }),
       { cardSetId, cardVariant, cardInfo }
     );
     const selectedPrinting = pricing.selectedPrinting;
@@ -189,6 +192,8 @@ app.post('/api/check', upload.single('image'), async (req, res) => {
       cardSetId,
       cardVariant,
       gradeKey,
+      languageKey: pricing.languageKey || languageKey,
+      languageLabel: pricing.languageLabel,
       isParallel: cardVariant === 'parallel',
       isSp: cardVariant === 'sp',
       isGraded: gradeKey !== 'raw',
@@ -217,9 +222,10 @@ app.get('/api/prices/:cardSetId', async (req, res) => {
       isGraded: req.query.graded,
     });
     const printingKey = (req.query.printing || '').trim() || null;
+    const languageKey = req.query.language || req.query.lang || 'ja';
     const cardInfo = await fetchCardInfo(cardSetId, { cardVariant });
     const pricing = attachDistributionToPricing(
-      await lookupPrices(cardSetId, { cardVariant, gradeKey, printingKey }),
+      await lookupPrices(cardSetId, { cardVariant, gradeKey, languageKey, printingKey }),
       { cardSetId, cardVariant, cardInfo }
     );
     const selectedPrinting = pricing.selectedPrinting;
@@ -234,6 +240,8 @@ app.get('/api/prices/:cardSetId', async (req, res) => {
       cardSetId,
       cardVariant,
       gradeKey,
+      languageKey: pricing.languageKey || languageKey,
+      languageLabel: pricing.languageLabel,
       isParallel: cardVariant === 'parallel',
       isSp: cardVariant === 'sp',
       isGraded: gradeKey !== 'raw',

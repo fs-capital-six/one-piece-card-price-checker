@@ -687,6 +687,7 @@ form.addEventListener('submit', async (e) => {
   submitBtn.disabled = true;
 
   const formData = new FormData(form);
+  formData.set('language', 'ja');
   formData.set('cardVariant', cardVariantSelect.value);
   formData.set('gradeKey', gradeKeySelect.value);
 

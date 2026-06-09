@@ -37,17 +37,35 @@
           </div>
 
           <div>
-            <label for="cardSetId" class="block text-sm font-medium text-slate-300 mb-2">
-              Kode Kartu <span class="text-slate-500" id="cardSetIdHint">(opsional jika foto diunggah)</span>
-            </label>
-            <p id="cardIdDetectHint" class="hidden text-xs text-emerald-400/90 mb-2"></p>
-            <input
-              type="text"
-              id="cardSetId"
-              name="cardSetId"
-              placeholder="OP01-001"
-              class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-500"
-            />
+            <div class="card-code-row">
+              <div class="card-code-field">
+                <label for="cardSetId" class="block text-sm font-medium text-slate-300 mb-2">
+                  Kode Kartu <span class="text-slate-500" id="cardSetIdHint">(opsional jika foto diunggah)</span>
+                </label>
+                <input
+                  type="text"
+                  id="cardSetId"
+                  name="cardSetId"
+                  placeholder="OP01-001"
+                  class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+              <div class="language-inline">
+                <label for="languageKey" class="block text-sm font-medium text-slate-300 mb-2">Language</label>
+                <input type="hidden" name="language" value="ja" />
+                <select
+                  id="languageKey"
+                  class="filter-select filter-select-locked filter-select-compact"
+                  disabled
+                  aria-disabled="true"
+                  title="Saat ini hanya Japanese. English akan ditambahkan nanti."
+                >
+                  <option value="ja" selected>JP (日本語)</option>
+                  <option value="en" disabled>EN — soon</option>
+                </select>
+              </div>
+            </div>
+            <p id="cardIdDetectHint" class="hidden text-xs text-emerald-400/90 mt-2"></p>
           </div>
 
           <div class="filter-field">
@@ -128,7 +146,7 @@
               <h2 class="text-2xl font-bold mt-1" id="resultCardName"></h2>
               <p class="text-slate-400 mt-1" id="resultSetName"></p>
               <div id="resultBadges" class="flex flex-wrap gap-2 mt-2">
-                <span id="resultMarketBadge" class="text-xs font-semibold px-2 py-1 rounded variant-badge-jp">Versi Jepang (JP)</span>
+                <span id="resultMarketBadge" class="text-xs font-semibold px-2 py-1 rounded variant-badge-jp">Japanese (日本語)</span>
                 <span id="resultVariantBadge" class="text-xs font-semibold px-2 py-1 rounded"></span>
                 <span id="resultGradedBadge" class="text-xs font-semibold px-2 py-1 rounded"></span>
               </div>
@@ -220,6 +238,6 @@
     </div>
   </div>
 
-  <script src="/app.js?v=1.7.0"></script>
+  <script src="/app.js?v=1.8.1"></script>
 </body>
 </html>

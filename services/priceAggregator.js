@@ -14,6 +14,7 @@ const {
 const { attachPrinting } = require('./printingParser');
 const { summarize, buildPrintings, selectPrinting } = require('./printingGroups');
 const { filterJapanesePriceEntries } = require('./regionFilter');
+const { parseLanguageKey, languageKeyLabel, isLanguageEnabled } = require('./languageFilter');
 
 function savePrices(cardSetId, entries) {
   const insert = db.prepare(`
@@ -52,16 +53,49 @@ function resolveLookupOptions(options = {}) {
     isSp: options.isSp,
   });
   const gradeKey = parseGradeKey(options.gradeKey, { isGraded: options.isGraded });
-  return { cardVariant, gradeKey };
+  const languageKey = parseLanguageKey(options.language || options.languageKey);
+  return { cardVariant, gradeKey, languageKey };
 }
 
 async function lookupPrices(cardSetId, options = {}) {
-  const { cardVariant, gradeKey } = resolveLookupOptions(options);
+  const { cardVariant, gradeKey, languageKey } = resolveLookupOptions(options);
   const { printingKey = null } = options;
   const normalized = cardSetId.toUpperCase();
   const errors = [];
   const variantFlags = { cardVariant, isParallel: cardVariant === 'parallel', isSp: cardVariant === 'sp' };
   const isGradedLookup = isGradedGradeKey(gradeKey);
+
+  if (!isLanguageEnabled(languageKey)) {
+    return {
+      cardSetId: normalized,
+      cardVariant,
+      gradeKey,
+      languageKey,
+      languageLabel: languageKeyLabel(languageKey),
+      isParallel: cardVariant === 'parallel',
+      isSp: cardVariant === 'sp',
+      isGraded: isGradedLookup,
+      variantType: cardVariantLabel(cardVariant),
+      gradedType: gradeKeyLabel(gradeKey),
+      prices: [],
+      bySource: { 'yuyu-tei': [], snkrdunk: [], facebook: [] },
+      summary: summarize([], { gradeKey }),
+      indonesiaSummary: summarize([], { gradeKey }),
+      internationalSummary: summarize([], { gradeKey }),
+      allSummary: summarize([], { gradeKey }),
+      allIndonesiaSummary: summarize([], { gradeKey }),
+      allInternationalSummary: summarize([], { gradeKey }),
+      printings: [],
+      hasMultiplePrintings: false,
+      defaultPrintingKey: null,
+      selectedPrintingKey: null,
+      selectedPrinting: null,
+      sourceMeta: {},
+      marketScope: { international: languageKey.toUpperCase() },
+      errors: [],
+      message: `${languageKeyLabel(languageKey)} belum tersedia — saat ini hanya Japanese (日本語).`,
+    };
+  }
 
   const [yuyuTeiRaw, snkrdunkRaw, facebookRaw, printingCatalog] = await Promise.all([
     fetchYuyuTeiPrices(normalized).catch((err) => {
@@ -79,7 +113,9 @@ async function lookupPrices(cardSetId, options = {}) {
   const yuyuTei = isGradedLookup
     ? []
     : tagEntries(applyFilters(yuyuTeiRaw, { cardVariant, gradeKey: 'raw' }), normalized);
-  const snkrdunk = applyFilters(filterJapanesePriceEntries(snkrdunkRaw), { cardVariant, gradeKey });
+  const snkrdunkRawFiltered =
+    languageKey === 'ja' ? filterJapanesePriceEntries(snkrdunkRaw) : snkrdunkRaw;
+  const snkrdunk = applyFilters(snkrdunkRawFiltered, { cardVariant, gradeKey });
   const facebook = tagEntries(applyFilters(facebookRaw, { cardVariant, gradeKey }), normalized);
   const allEntries = [...yuyuTei, ...snkrdunk, ...facebook];
 
@@ -107,6 +143,8 @@ async function lookupPrices(cardSetId, options = {}) {
     cardSetId: normalized,
     cardVariant,
     gradeKey,
+    languageKey,
+    languageLabel: languageKeyLabel(languageKey),
     isParallel: cardVariant === 'parallel',
     isSp: cardVariant === 'sp',
     isGraded: isGradedLookup,
