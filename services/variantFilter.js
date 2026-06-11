@@ -21,6 +21,7 @@ const SEC_EXCLUDE_PATTERN = /\bSEC-(?:P|SP|SPC)\b|\bP-SEC\b/i;
 const NON_PARALLEL_ALT_PATTERN = /manga|漫画|レカフィグ|recafig|illustration\s*box|box\s*topper/i;
 
 const CARD_VARIANTS = ['normal', 'parallel', 'sp', 'manga', 'sec', 'promo'];
+const CARD_VARIANT_FILTER_OPTIONS = ['all', ...CARD_VARIANTS];
 
 function isMangaVariant(text) {
   return MANGA_PATTERN.test(String(text || ''));
@@ -64,6 +65,7 @@ function classifyCardVariant(text) {
 }
 
 function resolveCardVariant({ cardVariant, isParallel = false, isSp = false } = {}) {
+  if (cardVariant === 'all') return 'all';
   if (cardVariant && CARD_VARIANTS.includes(cardVariant)) return cardVariant;
   if (isSp) return 'sp';
   if (isParallel) return 'parallel';
@@ -79,6 +81,7 @@ function parseSpFlag(value) {
 }
 
 function parseCardVariant(value, flags = {}) {
+  if (value === 'all') return 'all';
   if (value && CARD_VARIANTS.includes(String(value))) return String(value);
   return resolveCardVariant(flags);
 }
@@ -96,11 +99,13 @@ function entryVariantKind(entry) {
 
 function filterByCardVariant(entries, { cardVariant = 'normal', isParallel, isSp } = {}) {
   const want = resolveCardVariant({ cardVariant, isParallel, isSp });
+  if (want === 'all') return entries;
   return entries.filter((entry) => entryVariantKind(entry) === want);
 }
 
 function cardVariantLabel(cardVariant = 'normal') {
   const labels = {
+    all: 'Semua Varian',
     normal: 'Normal',
     parallel: 'Parallel (★)',
     sp: 'SP',
@@ -143,6 +148,7 @@ function gradedLabel(wantGraded) {
 
 module.exports = {
   CARD_VARIANTS,
+  CARD_VARIANT_FILTER_OPTIONS,
   isMangaVariant,
   isParallelVariant,
   isSpVariant,

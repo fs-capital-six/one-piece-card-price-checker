@@ -59,6 +59,7 @@ function sourceLinkHtml(url, label = 'Buka halaman →') {
 }
 
 const VARIANT_LABELS = {
+  all: 'Semua Varian',
   normal: 'Normal',
   parallel: 'Parallel (★)',
   sp: 'SP',
@@ -68,6 +69,7 @@ const VARIANT_LABELS = {
 };
 
 const VARIANT_BADGE_CLASS = {
+  all: 'variant-badge-all',
   normal: 'variant-badge-normal',
   parallel: 'variant-badge-parallel',
   sp: 'variant-badge-sp',
@@ -279,7 +281,9 @@ function hideError() {
 
 function buildCardImageUrl(cardSetId, { cardVariant = 'normal' } = {}, printing) {
   const params = new URLSearchParams();
-  if (cardVariant && cardVariant !== 'normal') params.set('variant', cardVariant);
+  if (cardVariant && cardVariant !== 'normal' && cardVariant !== 'all') {
+    params.set('variant', cardVariant);
+  }
   if (cardVariant === 'parallel') params.set('parallel', 'true');
   if (cardVariant === 'sp') params.set('sp', 'true');
   if (printing?.imageUrl) params.set('imageUrl', printing.imageUrl);

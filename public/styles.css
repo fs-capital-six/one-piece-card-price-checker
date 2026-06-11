@@ -115,6 +115,12 @@
   font-size: 0.9375rem;
 }
 
+.variant-badge-all {
+  background: rgba(148, 163, 184, 0.2);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
 .variant-badge-normal {
   background: #334155;
   color: #e2e8f0;

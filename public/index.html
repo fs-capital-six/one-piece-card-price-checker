@@ -72,7 +72,8 @@
           <div class="filter-field">
             <label for="cardVariant" class="block text-sm font-medium text-slate-300 mb-2">Varian Kartu</label>
             <select id="cardVariant" name="cardVariant" class="filter-select">
-              <option value="normal">Normal</option>
+              <option value="all">Semua Varian (ALL)</option>
+              <option value="normal" selected>Normal</option>
               <option value="parallel">Parallel (★) — bintang di atas rarity</option>
               <option value="sp">SP (Special) — logo SP di samping kode kartu</option>
               <option value="manga">Manga / Comic Parallel</option>
@@ -80,7 +81,7 @@
               <option value="promo">Promo</option>
             </select>
             <p class="text-xs text-slate-500 mt-1.5">
-              Pilih varian fisik kartu. Parallel, SP, dan Manga punya harga berbeda di SNKRDUNK.
+              Pilih ALL untuk melihat semua varian sekaligus, atau pilih varian tertentu.
             </p>
           </div>
 
@@ -239,6 +240,6 @@
     </div>
   </div>
 
-  <script src="/app.js?v=1.8.2"></script>
+  <script src="/app.js?v=1.9.0"></script>
 </body>
 </html>

@@ -137,6 +137,8 @@ async function lookupPrices(cardSetId, options = {}) {
   } else if (printingData.hasMultiplePrintings) {
     const range = printingData.allSummary;
     message = `${printingData.printings.length} edisi cetak ditemukan. Menampilkan ${selected.selectedPrinting?.label || 'default'} (rentang semua edisi: ${range.minFormatted} – ${range.maxFormatted}).`;
+  } else if (cardVariant === 'all' && selected.summary.count > 0) {
+    message = `Menampilkan harga semua varian untuk ${normalized}.`;
   }
 
   return {
