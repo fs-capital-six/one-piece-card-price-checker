@@ -1,8 +1,25 @@
+require('dotenv').config();
+
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const session = require('express-session');
 const multer = require('multer');
 const db = require('./db');
+const { SAMPLE_CSV } = require('./services/postTemplate');
+const { processPostTemplate } = require('./services/postTemplateRequest');
+const {
+  buildLabeledPhotos,
+  buildLabeledPhotoEntries,
+  createPostPackageZip,
+} = require('./services/postPackage');
+const {
+  getFacebookConfig,
+  createOAuthState,
+  buildLoginUrl,
+  loginWithFacebookCode,
+  toSessionUser,
+} = require('./services/facebookAuth');
 const { lookupPrices } = require('./services/priceAggregator');
 const { identifyFromImage, extractCardId, fetchCardInfo } = require('./services/cardIdentifier');
 const { resolveCardImageSources } = require('./services/cardImage');
@@ -51,14 +68,205 @@ const upload = multer({
   },
 });
 
+const postTemplateUpload = multer({
+  dest: uploadsDir,
+  limits: { fileSize: 10 * 1024 * 1024, files: 201 },
+  fileFilter: (_req, file, cb) => {
+    if (file.fieldname === 'csv') {
+      const isCsv =
+        file.mimetype === 'text/csv' ||
+        file.mimetype === 'application/vnd.ms-excel' ||
+        file.originalname.toLowerCase().endsWith('.csv');
+      return isCsv ? cb(null, true) : cb(new Error('Unggah file CSV yang valid'));
+    }
+
+    if (file.fieldname === 'photos' && file.mimetype.startsWith('image/')) {
+      return cb(null, true);
+    }
+
+    return cb(new Error('Tipe file tidak didukung'));
+  },
+});
+
+function cleanupUploadedFiles(files = []) {
+  for (const file of files) {
+    if (file?.path) fs.unlink(file.path, () => {});
+  }
+}
+
 app.use(express.json());
+app.set('trust proxy', 1);
+app.use(
+  session({
+    name: 'opcc.sid',
+    secret: process.env.SESSION_SECRET || 'dev-only-change-me',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    },
+  })
+);
 app.use((req, res, next) => {
-  if (req.path === '/' || req.path.endsWith('.html')) {
+  if (req.path === '/' || req.path === '/facebook-group-tools' || req.path.endsWith('.html')) {
     res.set('Cache-Control', 'no-store');
   }
   next();
 });
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/auth/facebook', (req, res) => {
+  const { isConfigured } = getFacebookConfig();
+  if (!isConfigured) {
+    return res.status(503).send(
+      'Facebook Login belum dikonfigurasi. Set FACEBOOK_APP_ID dan FACEBOOK_APP_SECRET di environment.'
+    );
+  }
+
+  const returnTo =
+    typeof req.query.returnTo === 'string' && req.query.returnTo.startsWith('/')
+      ? req.query.returnTo
+      : '/facebook-group-tools';
+
+  const state = createOAuthState();
+  req.session.oauthState = state;
+  req.session.returnTo = returnTo;
+  req.session.save(() => {
+    res.redirect(buildLoginUrl(req, state));
+  });
+});
+
+app.get('/auth/facebook/callback', async (req, res) => {
+  const { code, state, error, error_description: errorDescription } = req.query;
+
+  if (error) {
+    return res.redirect(`/facebook-group-tools?auth_error=${encodeURIComponent(errorDescription || error)}`);
+  }
+
+  if (!code || !state || state !== req.session.oauthState) {
+    return res.redirect('/facebook-group-tools?auth_error=invalid_state');
+  }
+
+  try {
+    const user = await loginWithFacebookCode(req, code);
+    req.session.user = toSessionUser(user);
+    delete req.session.oauthState;
+
+    const returnTo = req.session.returnTo || '/facebook-group-tools';
+    delete req.session.returnTo;
+
+    req.session.save(() => {
+      res.redirect(returnTo);
+    });
+  } catch (err) {
+    res.redirect(`/facebook-group-tools?auth_error=${encodeURIComponent(err.message)}`);
+  }
+});
+
+app.get('/auth/logout', (req, res) => {
+  req.session.destroy(() => {
+    res.redirect('/facebook-group-tools');
+  });
+});
+
+app.get('/api/auth/me', (req, res) => {
+  if (!req.session?.user) {
+    return res.status(401).json({ authenticated: false });
+  }
+
+  res.json({ authenticated: true, user: req.session.user });
+});
+
+app.get('/facebook-group-tools', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'facebook-group-tools.html'));
+});
+
+app.get('/api/facebook-tools/sample-csv', (_req, res) => {
+  res.set('Content-Type', 'text/csv; charset=utf-8');
+  res.set('Content-Disposition', 'attachment; filename="template-post-facebook.csv"');
+  res.send(SAMPLE_CSV);
+});
+
+const postTemplateFields = postTemplateUpload.fields([
+  { name: 'csv', maxCount: 1 },
+  { name: 'photos', maxCount: 200 },
+]);
+
+app.post('/api/facebook-tools/generate-post', postTemplateFields, async (req, res) => {
+  let uploaded = [];
+
+  try {
+    const { uploaded: files, photoFiles, result } = processPostTemplate(req);
+    uploaded = files;
+
+    const labeledPhotos = await buildLabeledPhotos({
+      items: result.items,
+      photoFiles,
+    });
+
+    res.json({
+      ok: true,
+      ...result,
+      labeledPhotoCount: labeledPhotos.length,
+      labeledPhotos: labeledPhotos.map((photo) => ({
+        rowNumber: photo.rowNumber,
+        cardCode: photo.cardCode,
+        filename: photo.filename,
+        dataUrl: `data:image/jpeg;base64,${photo.buffer.toString('base64')}`,
+      })),
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message || 'Gagal membuat template posting' });
+  } finally {
+    cleanupUploadedFiles(uploaded);
+  }
+});
+
+app.post('/api/facebook-tools/download-package', postTemplateFields, async (req, res) => {
+  let uploaded = [];
+
+  try {
+    const { uploaded: files, photoFiles, result } = processPostTemplate(req);
+    uploaded = files;
+
+    const labeledEntries = await buildLabeledPhotoEntries({
+      items: result.items,
+      photoFiles,
+    });
+
+    if (labeledEntries.length === 0) {
+      return res.status(400).json({
+        error: 'Tidak ada foto yang cocok dengan CSV. Pastikan kolom photo atau nama file sesuai kode kartu.',
+      });
+    }
+
+    const filename = `facebook-post-${new Date().toISOString().slice(0, 10)}.zip`;
+    res.set('Content-Type', 'application/zip');
+    res.set('Content-Disposition', `attachment; filename="${filename}"`);
+
+    const archive = createPostPackageZip({
+      postText: result.postText,
+      labeledEntries,
+    });
+
+    archive.on('error', (err) => {
+      if (!res.headersSent) {
+        res.status(500).json({ error: err.message || 'Gagal membuat file ZIP' });
+      }
+    });
+
+    archive.pipe(res);
+  } catch (err) {
+    if (!res.headersSent) {
+      res.status(400).json({ error: err.message || 'Gagal membuat paket unduhan' });
+    }
+  } finally {
+    cleanupUploadedFiles(uploaded);
+  }
+});
 
 function buildCardImageQuery({ cardVariant, isParallel, isSp, imageUrl, apparelId }) {
   const params = new URLSearchParams();
