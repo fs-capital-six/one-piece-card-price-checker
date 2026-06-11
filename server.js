@@ -25,7 +25,7 @@ const { identifyFromImage, extractCardId, fetchCardInfo } = require('./services/
 const { resolveCardImageSources } = require('./services/cardImage');
 const { addFacebookPrice } = require('./services/facebook');
 const { formatIdr } = require('./services/currency');
-const { parseCardVariant, parseGradeKey } = require('./services/variantFilter');
+const { parseCardVariant, parseGradeKey, CARD_VARIANT_FILTER_OPTIONS } = require('./services/variantFilter');
 const { GRADE_OPTIONS } = require('./services/gradeFilter');
 const { LANGUAGE_OPTIONS } = require('./services/languageFilter');
 const { buildDistributionDescription } = require('./services/cardDistribution');
@@ -270,7 +270,9 @@ app.post('/api/facebook-tools/download-package', postTemplateFields, async (req,
 
 function buildCardImageQuery({ cardVariant, isParallel, isSp, imageUrl, apparelId }) {
   const params = new URLSearchParams();
-  if (cardVariant && cardVariant !== 'normal') params.set('variant', cardVariant);
+  if (cardVariant && cardVariant !== 'normal' && cardVariant !== 'all') {
+    params.set('variant', cardVariant);
+  }
   if (isParallel) params.set('parallel', 'true');
   if (isSp) params.set('sp', 'true');
   if (imageUrl) params.set('imageUrl', imageUrl);
@@ -282,9 +284,9 @@ function buildCardImageQuery({ cardVariant, isParallel, isSp, imageUrl, apparelI
 app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
-    version: '1.8.0',
+    version: '1.9.0',
     features: {
-      cardVariants: ['normal', 'parallel', 'sp', 'manga', 'sec', 'promo'],
+      cardVariants: CARD_VARIANT_FILTER_OPTIONS,
       gradeFilters: true,
       languageFilter: true,
     },

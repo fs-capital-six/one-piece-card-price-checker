@@ -287,7 +287,9 @@ async function fetchCardInfo(cardSetId, { cardVariant, isParallel = false, isSp 
 
     const variantKind = (v) => classifyCardVariant(`${v.card_name} ${v.rarity}`);
     const want =
-      cardVariant || (isSp ? 'sp' : isParallel ? 'parallel' : 'normal');
+      cardVariant === 'all'
+        ? 'normal'
+        : cardVariant || (isSp ? 'sp' : isParallel ? 'parallel' : 'normal');
     const primary = variants.find((v) => variantKind(v) === want);
     const selected =
       primary ??

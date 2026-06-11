@@ -85,7 +85,10 @@ async function findApparels(cardSetId) {
 }
 
 function pickBestApparel(apparels, { cardVariant = 'normal', isParallel = false, isSp = false } = {}) {
-  const want = cardVariant || (isSp ? 'sp' : isParallel ? 'parallel' : 'normal');
+  const want =
+    cardVariant === 'all'
+      ? 'normal'
+      : cardVariant || (isSp ? 'sp' : isParallel ? 'parallel' : 'normal');
   const matching = apparels.filter((item) => {
     const name = item.name || item.localizedName || '';
     return classifyCardVariant(name) === want;
@@ -285,15 +288,19 @@ async function fetchPricesForApparel(apparel, cardSetId) {
   return results;
 }
 
+function filterApparelsByVariant(apparels, want) {
+  if (want === 'all') return apparels;
+  return apparels.filter((item) => {
+    const name = item.name || item.localizedName || '';
+    return classifyCardVariant(name) === want;
+  });
+}
+
 async function fetchSnkrdunkPrintingsCatalog(cardSetId, { cardVariant = 'normal', isParallel = false, isSp = false } = {}) {
   const apparels = await findApparels(cardSetId);
   const want = cardVariant || (isSp ? 'sp' : isParallel ? 'parallel' : 'normal');
 
-  const catalog = apparels
-    .filter((item) => {
-      const name = item.name || item.localizedName || '';
-      return classifyCardVariant(name) === want;
-    })
+  const catalog = filterApparelsByVariant(apparels, want)
     .map((item) => {
       const apparelName = item.name || item.localizedName || cardSetId;
       const printing = parsePrintingFromVariantName(apparelName, cardSetId);
@@ -322,10 +329,7 @@ async function fetchSnkrdunkPrintingsCatalog(cardSetId, { cardVariant = 'normal'
 async function fetchSnkrdunkPrices(cardSetId, { cardVariant = 'normal', isParallel = false, isSp = false } = {}) {
   const apparels = await findApparels(cardSetId);
   const want = cardVariant || (isSp ? 'sp' : isParallel ? 'parallel' : 'normal');
-  const matching = apparels.filter((item) => {
-    const name = item.name || item.localizedName || '';
-    return classifyCardVariant(name) === want;
-  });
+  const matching = filterApparelsByVariant(apparels, want);
 
   if (matching.length === 0) return [];
 

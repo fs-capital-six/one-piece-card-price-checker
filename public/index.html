@@ -13,7 +13,7 @@
       <p class="text-amber-400 text-sm font-semibold tracking-widest uppercase mb-2">One Piece TCG</p>
       <h1 class="text-3xl md:text-4xl font-bold mb-3">Cek Harga Kartu</h1>
       <p class="text-slate-400 max-w-2xl mx-auto">
-        Unggah foto kartu (opsional) dan masukkan kode kartu. Lihat
+        Masukkan kode kartu untuk cek harga. Lihat
         <span class="text-slate-200">rata-rata pasar Indonesia</span> (komunitas lokal) dan
         <span class="text-slate-200">referensi internasional (JP)</span> dari Yuyu-Tei &amp; SNKRDUNK — harga kartu
         <span class="text-slate-200">versi Jepang</span> saja, dalam Rupiah.
@@ -23,7 +23,8 @@
     <main class="space-y-6">
       <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
         <form id="checkForm" class="space-y-5">
-          <div>
+          <!-- Temporarily hidden: Foto Kartu upload -->
+          <div class="hidden">
             <label class="block text-sm font-medium text-slate-300 mb-2">Foto Kartu (opsional)</label>
             <div
               id="dropZone"
@@ -40,7 +41,7 @@
             <div class="card-code-row">
               <div class="card-code-field">
                 <label for="cardSetId" class="block text-sm font-medium text-slate-300 mb-2">
-                  Kode Kartu <span class="text-slate-500" id="cardSetIdHint">(opsional jika foto diunggah)</span>
+                  Kode Kartu <span class="text-slate-500" id="cardSetIdHint">(contoh: OP01-001)</span>
                 </label>
                 <input
                   type="text"
@@ -71,7 +72,8 @@
           <div class="filter-field">
             <label for="cardVariant" class="block text-sm font-medium text-slate-300 mb-2">Varian Kartu</label>
             <select id="cardVariant" name="cardVariant" class="filter-select">
-              <option value="normal">Normal</option>
+              <option value="all">Semua Varian (ALL)</option>
+              <option value="normal" selected>Normal</option>
               <option value="parallel">Parallel (★) — bintang di atas rarity</option>
               <option value="sp">SP (Special) — logo SP di samping kode kartu</option>
               <option value="manga">Manga / Comic Parallel</option>
@@ -79,7 +81,7 @@
               <option value="promo">Promo</option>
             </select>
             <p class="text-xs text-slate-500 mt-1.5">
-              Pilih varian fisik kartu. Parallel, SP, dan Manga punya harga berbeda di SNKRDUNK.
+              Pilih ALL untuk melihat semua varian sekaligus, atau pilih varian tertentu.
             </p>
           </div>
 
@@ -246,6 +248,6 @@
     </div>
   </div>
 
-  <script src="/app.js?v=1.8.3"></script>
+  <script src="/app.js?v=1.9.0"></script>
 </body>
 </html>

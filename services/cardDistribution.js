@@ -139,7 +139,8 @@ function buildDistributionDescription({ cardSetId, cardVariant = 'normal', print
   const fromSet = classifyBySetPrefix(cardSetId, cardInfo);
   const channel = fromPrinting || fromSet;
 
-  const variantNote = VARIANT_NOTES[cardVariant] || null;
+  const variantKey = cardVariant === 'all' ? 'normal' : cardVariant;
+  const variantNote = VARIANT_NOTES[variantKey] || null;
   const editionNote =
     printingLabel && printingLabel !== 'Standard' && printingLabel !== 'Booster Pack'
       ? `Edisi cetak: ${printingLabel}.`
