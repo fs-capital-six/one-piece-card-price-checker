@@ -22,6 +22,32 @@ npm start
 
 Buka [http://localhost:3000](http://localhost:3000)
 
+## Facebook Login (Facebook Group Tools)
+
+Halaman `/facebook-group-tools` memakai login Facebook.
+
+1. Buat app di [Meta for Developers](https://developers.facebook.com/apps/)
+2. Tambahkan produk **Facebook Login**
+3. Di **Valid OAuth Redirect URIs**, tambahkan:
+   - `http://localhost:3000/auth/facebook/callback` (development)
+   - `https://<domain-anda>/auth/facebook/callback` (production)
+4. Salin `.env.example` ke `.env` dan isi:
+
+```bash
+cp .env.example .env
+```
+
+```env
+FACEBOOK_APP_ID=your_app_id
+FACEBOOK_APP_SECRET=your_app_secret
+SESSION_SECRET=random-long-string
+APP_BASE_URL=http://localhost:3000
+```
+
+5. Jalankan ulang server, lalu buka [http://localhost:3000/facebook-group-tools](http://localhost:3000/facebook-group-tools)
+
+Data user login disimpan di `data/auth.db` (terpisah dari `prices.db`).
+
 ## Deploy gratis (publik)
 
 Cara termudah: **[Render](https://render.com)** (free tier).

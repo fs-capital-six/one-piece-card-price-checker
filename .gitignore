@@ -3,4 +3,5 @@ data/
 uploads/
 data/tesseract-cache/
 *.db
+.env
 .DS_Store

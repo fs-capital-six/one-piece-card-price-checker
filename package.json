@@ -11,8 +11,11 @@
     "dev": "node --experimental-sqlite --watch server.js"
   },
   "dependencies": {
+    "archiver": "^8.0.0",
     "cheerio": "^1.0.0",
+    "dotenv": "^17.4.2",
     "express": "^4.21.2",
+    "express-session": "^1.19.0",
     "multer": "^1.4.5-lts.1",
     "sharp": "^0.34.5",
     "tesseract.js": "^7.0.0"
