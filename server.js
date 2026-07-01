@@ -20,6 +20,14 @@ const {
   loginWithFacebookCode,
   toSessionUser,
 } = require('./services/facebookAuth');
+const { requireAuth } = require('./middleware/requireAuth');
+const {
+  findUserById,
+  listMonitoredPostsByUserId,
+  createMonitoredPost,
+  deleteMonitoredPost,
+  updateMonitoredPostStatus,
+} = require('./services/authDb');
 const { lookupPrices } = require('./services/priceAggregator');
 const { identifyFromImage, extractCardId, fetchCardInfo } = require('./services/cardIdentifier');
 const { resolveCardImageSources } = require('./services/cardImage');
@@ -177,7 +185,18 @@ app.get('/api/auth/me', (req, res) => {
     return res.status(401).json({ authenticated: false });
   }
 
-  res.json({ authenticated: true, user: req.session.user });
+  const dbUser = findUserById(req.session.user.id);
+  if (!dbUser) {
+    return res.status(401).json({ authenticated: false });
+  }
+
+  req.session.user = toSessionUser(dbUser);
+
+  res.json({
+    authenticated: true,
+    user: req.session.user,
+    monitoredPostCount: listMonitoredPostsByUserId(dbUser.id).length,
+  });
 });
 
 app.get('/facebook-group-tools', (_req, res) => {
@@ -188,6 +207,57 @@ app.get('/api/facebook-tools/sample-csv', (_req, res) => {
   res.set('Content-Type', 'text/csv; charset=utf-8');
   res.set('Content-Disposition', 'attachment; filename="template-post-facebook.csv"');
   res.send(SAMPLE_CSV);
+});
+
+app.get('/api/facebook-tools/monitored-posts', requireAuth, (req, res) => {
+  const posts = listMonitoredPostsByUserId(req.session.user.id);
+  res.json({ ok: true, posts });
+});
+
+app.post('/api/facebook-tools/monitored-posts', requireAuth, (req, res) => {
+  try {
+    const { postUrl, postTitle, notes } = req.body || {};
+    const post = createMonitoredPost({
+      userId: req.session.user.id,
+      postUrl,
+      postTitle,
+      notes,
+    });
+    res.status(201).json({ ok: true, post });
+  } catch (err) {
+    res.status(400).json({ error: err.message || 'Gagal menyimpan link posting' });
+  }
+});
+
+app.patch('/api/facebook-tools/monitored-posts/:id', requireAuth, (req, res) => {
+  try {
+    const post = updateMonitoredPostStatus({
+      id: Number(req.params.id),
+      userId: req.session.user.id,
+      status: req.body?.status,
+    });
+
+    if (!post) {
+      return res.status(404).json({ error: 'Posting tidak ditemukan' });
+    }
+
+    res.json({ ok: true, post });
+  } catch (err) {
+    res.status(400).json({ error: err.message || 'Gagal memperbarui status posting' });
+  }
+});
+
+app.delete('/api/facebook-tools/monitored-posts/:id', requireAuth, (req, res) => {
+  const deleted = deleteMonitoredPost({
+    id: Number(req.params.id),
+    userId: req.session.user.id,
+  });
+
+  if (!deleted) {
+    return res.status(404).json({ error: 'Posting tidak ditemukan' });
+  }
+
+  res.json({ ok: true });
 });
 
 const postTemplateFields = postTemplateUpload.fields([

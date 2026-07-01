@@ -175,6 +175,64 @@
             </section>
           </div>
         </section>
+
+        <section id="monitoredPostsSection" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
+          <div>
+            <h2 class="text-xl font-bold">Pantau Link Posting</h2>
+            <p class="text-slate-400 text-sm mt-2">
+              Simpan link posting Facebook Anda untuk dipantau. Fitur monitoring komentar akan ditambahkan berikutnya.
+            </p>
+          </div>
+
+          <form id="monitoredPostForm" class="space-y-4">
+            <div>
+              <label for="monitoredPostUrl" class="block text-sm font-medium text-slate-300 mb-2">Link Posting Facebook</label>
+              <input
+                type="url"
+                id="monitoredPostUrl"
+                name="postUrl"
+                placeholder="https://www.facebook.com/groups/.../posts/..."
+                class="admin-input"
+                required
+              />
+            </div>
+            <div>
+              <label for="monitoredPostTitle" class="block text-sm font-medium text-slate-300 mb-2">Judul (opsional)</label>
+              <input
+                type="text"
+                id="monitoredPostTitle"
+                name="postTitle"
+                placeholder="WTS OP01 batch 1"
+                class="admin-input"
+              />
+            </div>
+            <div>
+              <label for="monitoredPostNotes" class="block text-sm font-medium text-slate-300 mb-2">Catatan (opsional)</label>
+              <textarea
+                id="monitoredPostNotes"
+                name="notes"
+                rows="2"
+                class="admin-input admin-textarea"
+                placeholder="Lelang, jual langsung, dll."
+              ></textarea>
+            </div>
+            <button
+              type="submit"
+              id="saveMonitoredPostBtn"
+              class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3 rounded-lg transition-colors disabled:opacity-50"
+            >
+              Simpan Link Posting
+            </button>
+          </form>
+
+          <div id="monitoredPostError" class="hidden bg-red-950/50 border border-red-800 text-red-200 rounded-xl p-4 text-sm"></div>
+          <div id="monitoredPostSuccess" class="hidden bg-emerald-950/40 border border-emerald-800 text-emerald-200 rounded-xl p-4 text-sm"></div>
+
+          <div id="monitoredPostsList" class="space-y-3"></div>
+          <p id="monitoredPostsEmpty" class="hidden text-sm text-slate-500 text-center py-4">
+            Belum ada link posting tersimpan.
+          </p>
+        </section>
       </section>
 
       <p class="text-center">
@@ -187,6 +245,7 @@
   </div>
 
   <script src="/facebook-tools-auth.js"></script>
+  <script src="/facebook-monitored-posts.js"></script>
   <script src="/facebook-post-template.js"></script>
 </body>
 </html>

@@ -22,12 +22,19 @@ function showLoggedIn(user) {
   userAvatar.src = user.pictureUrl || '';
   userAvatar.alt = user.name;
   userAvatar.classList.toggle('hidden', !user.pictureUrl);
+
+  if (typeof window.loadMonitoredPosts === 'function') {
+    window.loadMonitoredPosts();
+  }
 }
 
 function showGuestMode() {
   loginSection.classList.remove('hidden');
   toolsSection.classList.remove('hidden');
   userProfileSection.classList.add('hidden');
+
+  const monitoredPostsSection = document.getElementById('monitoredPostsSection');
+  monitoredPostsSection?.classList.add('hidden');
 }
 
 async function loadSession() {

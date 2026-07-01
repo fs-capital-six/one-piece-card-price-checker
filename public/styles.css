@@ -416,6 +416,39 @@
   resize: vertical;
 }
 
+.monitored-post-card {
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+.monitored-post-status {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+}
+
+.monitored-post-status-active {
+  background: rgba(52, 211, 153, 0.15);
+  color: #6ee7b7;
+}
+
+.monitored-post-status-closed {
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+}
+
+.monitored-post-status-cancelled {
+  background: rgba(248, 113, 113, 0.15);
+  color: #fca5a5;
+}
+
 .admin-input {
   width: 100%;
   background: #1e293b;

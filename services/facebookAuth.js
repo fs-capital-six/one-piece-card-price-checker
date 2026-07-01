@@ -81,7 +81,7 @@ async function loginWithFacebookCode(req, code) {
   const accessToken = await exchangeCodeForToken(req, code);
   const profile = await fetchFacebookProfile(accessToken);
 
-  const user = upsertUser({
+  const { user, isNewUser } = upsertUser({
     facebookId: profile.id,
     name: profile.name,
     email: profile.email || null,
@@ -89,21 +89,20 @@ async function loginWithFacebookCode(req, code) {
   });
 
   return {
-    id: user.id,
-    facebookId: user.facebook_id,
-    name: user.name,
-    email: user.email,
-    pictureUrl: user.picture_url,
+    ...user,
+    isNewUser,
   };
 }
 
 function toSessionUser(user) {
   return {
     id: user.id,
-    facebookId: user.facebookId || user.facebook_id,
+    facebookId: user.facebookId,
     name: user.name,
     email: user.email,
-    pictureUrl: user.pictureUrl || user.picture_url,
+    pictureUrl: user.pictureUrl,
+    loginCount: user.loginCount,
+    lastLoginAt: user.lastLoginAt,
   };
 }
 

@@ -46,7 +46,11 @@ APP_BASE_URL=http://localhost:3000
 
 5. Jalankan ulang server, lalu buka [http://localhost:3000/facebook-group-tools](http://localhost:3000/facebook-group-tools)
 
-Data user login disimpan di `data/auth.db` (terpisah dari `prices.db`).
+Data user login disimpan di **`data/auth.db`** (terpisah dari `prices.db`).
+
+Tabel:
+- `users` — profil Facebook + `login_count`, `last_login_at`
+- `monitored_posts` — siap untuk fitur simpan link posting (belum diaktifkan di UI)
 
 ## Deploy gratis (publik)
 
